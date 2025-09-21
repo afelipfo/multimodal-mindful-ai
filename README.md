@@ -31,11 +31,15 @@ The app recognizes and provides tailored support for:
 - **AI**: OpenAI GPT-4o-mini
 - **Deployment**: Production-ready with optimized builds
 
+## Live Demo
+
+🚀 **View the live application:** [https://mindful-ai-gamma.vercel.app](https://mindful-ai-gamma.vercel.app)
+
 ## Getting Started
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/afelipfo/Mindful_AI.git
    cd mindful-ai
    ```
 
