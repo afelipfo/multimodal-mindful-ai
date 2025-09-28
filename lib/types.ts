@@ -34,6 +34,31 @@ export interface MindfulResponse {
   place_recommendation: PlaceRecommendation;
 }
 
+export interface VoiceAnalysis {
+  emotion: string;
+  confidence: number;
+  tone: string;
+  energy: number;
+  speechRate: number;
+}
+
+export interface ImageAnalysis {
+  dominantEmotion: string;
+  emotions: {
+    happy: number;
+    sad: number;
+    angry: number;
+    surprised: number;
+    fearful: number;
+    disgusted: number;
+    neutral: number;
+  };
+  confidence: number;
+}
+
 export interface MoodInput {
   text_input: string;
+  voice_data?: string; // Base64 encoded audio
+  image_data?: string; // Base64 encoded image
+  analysis_mode?: 'text' | 'voice' | 'image' | 'multimodal';
 }

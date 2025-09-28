@@ -47,7 +47,11 @@ export default function Home() {
   }, [history]);
 
   const handleAnalyze = async () => {
-    if (!textInput.trim()) return;
+    if (!textInput.trim()) {
+      setError('Please enter some text to analyze your mood.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResult(null);
@@ -58,11 +62,17 @@ export default function Home() {
     }, 300);
 
     try {
+      console.log('Calling API with text:', textInput);
+      
       const response = await getEmotionalSupport(textInput);
+      
+      console.log('API response received:', response);
+      
       setResult(response);
       setHistory(prev => [response, ...prev.slice(0, 4)]); // Keep last 5
       setProgress(100);
-    } catch {
+    } catch (error) {
+      console.error('Frontend error:', error);
       setError('Failed to analyze mood. Please check your connection and try again.');
     } finally {
       clearInterval(progressInterval);
@@ -326,7 +336,6 @@ export default function Home() {
           )}
         </div>
       </main>
-
     </div>
   );
 }

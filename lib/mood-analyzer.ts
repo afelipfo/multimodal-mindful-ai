@@ -14,12 +14,30 @@ async function retryFetch(url: string, options: RequestInit, retries = 3, backof
   }
 }
 
-export async function getEmotionalSupport(text_input: string): Promise<MindfulResponse> {
+export async function getEmotionalSupport(
+  text_input: string,
+  voice_data?: string | null,
+  image_data?: string | null,
+  analysis_mode: 'text' | 'voice' | 'image' | 'multimodal' = 'text'
+): Promise<MindfulResponse> {
+  const requestBody = {
+    text_input,
+    voice_data: voice_data || undefined,
+    image_data: image_data || undefined,
+    analysis_mode
+  };
+
   const response = await retryFetch('/api/analyze-mood', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text_input }),
+    body: JSON.stringify(requestBody),
   });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || `HTTP ${response.status}`);
+  }
+  
   const data = await response.json();
   return data as MindfulResponse;
 }
