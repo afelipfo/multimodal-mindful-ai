@@ -4,6 +4,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { z } from 'zod';
 import { MoodInput } from '@/lib/types';
 import { musicDatabase } from '@/lib/music';
+import { MoodBasedRAG } from '@/lib/rag-system';
 
 const responseSchema = z.object({
   mood_detected: z.string(),
@@ -59,6 +60,16 @@ Examples:
     const randomSong = songs[Math.floor(Math.random() * songs.length)];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (response as any).music_recommendation = randomSong;
+
+    // Initialize RAG system and get book and place recommendations
+    const ragSystem = new MoodBasedRAG();
+    const ragRecommendations = await ragSystem.getRecommendations(text_input, response.mood_detected);
+    
+    // Add RAG recommendations to response
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (response as any).book_recommendation = ragRecommendations.book;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (response as any).place_recommendation = ragRecommendations.place;
 
     return NextResponse.json(response);
   } catch (error) {

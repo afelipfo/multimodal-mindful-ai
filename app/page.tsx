@@ -62,7 +62,7 @@ export default function Home() {
       setResult(response);
       setHistory(prev => [response, ...prev.slice(0, 4)]); // Keep last 5
       setProgress(100);
-    } catch (error) {
+    } catch {
       setError('Failed to analyze mood. Please check your connection and try again.');
     } finally {
       clearInterval(progressInterval);
@@ -103,7 +103,7 @@ export default function Home() {
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
             <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-gray-800">Mindful AI</h1>
-            <p className="text-lg text-gray-600">Discover your emotions and find support tailored to your mood</p>
+            <p className="text-lg text-gray-600">Discover your emotions and find personalized support based on your mood</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8 transition-all duration-300">
@@ -112,7 +112,7 @@ export default function Home() {
             </label>
             <textarea
               id="mood-input"
-              className="w-full p-4 border border-gray-300 rounded-lg mb-4 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              className="w-full p-4 border border-gray-300 rounded-lg mb-4 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-900 bg-white"
               rows={4}
               placeholder="Share your thoughts and feelings..."
               value={textInput}
@@ -236,6 +236,77 @@ export default function Home() {
                     })()}
                   </div>
                 </div>
+                <div className="flex items-start">
+                  <span className="text-2xl mr-3" role="img" aria-label="Book">📚</span>
+                  <div className="w-full">
+                    <h3 className="font-semibold mb-2 text-gray-800">Book Recommendation</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-800 mb-1">{result.book_recommendation.title}</h4>
+                      <p className="text-sm text-gray-600 mb-2">by {result.book_recommendation.author}</p>
+                      <p className="text-sm text-gray-700 mb-2">{result.book_recommendation.description}</p>
+                      <p className="text-xs text-gray-500 mb-3">Genre: {result.book_recommendation.genre}</p>
+                      <div className="flex gap-2">
+                        {result.book_recommendation.amazonLink && (
+                          <a 
+                            href={result.book_recommendation.amazonLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-xs bg-orange-500 text-white px-2 py-1 rounded hover:bg-orange-600 transition"
+                          >
+                            View on Amazon
+                          </a>
+                        )}
+                        {result.book_recommendation.goodreadsLink && (
+                          <a 
+                            href={result.book_recommendation.goodreadsLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition"
+                          >
+                            View on Goodreads
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-2xl mr-3" role="img" aria-label="Place">📍</span>
+                  <div className="w-full">
+                    <h3 className="font-semibold mb-2 text-gray-800">Place Recommendation</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-800 mb-1">{result.place_recommendation.name}</h4>
+                      <p className="text-sm text-gray-600 mb-2">📍 {result.place_recommendation.location}</p>
+                      <p className="text-sm text-gray-700 mb-2">{result.place_recommendation.description}</p>
+                      <p className="text-xs text-gray-500 mb-2">Type: {result.place_recommendation.type}</p>
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-gray-600 mb-1">Suggested activities:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {result.place_recommendation.activities.map((activity, index) => (
+                            <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              {activity}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      {result.place_recommendation.bestTimeToVisit && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Best time to visit: {result.place_recommendation.bestTimeToVisit}
+                        </p>
+                      )}
+                      {result.place_recommendation.websiteLink && (
+                        <a 
+                          href={result.place_recommendation.websiteLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
+                        >
+                          More information
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -246,8 +317,8 @@ export default function Home() {
               <div className="space-y-2">
                 {history.slice(0, 3).map((item, index) => (
                   <div key={index} className={`p-3 rounded border ${getMoodBg(item.mood_detected)} ${getMoodBorder(item.mood_detected)} cursor-pointer hover:opacity-80 transition`} onClick={() => setResult(item)}>
-                    <p className="font-medium">{item.mood_detected}</p>
-                    <p className="text-sm opacity-75">{new Date().toLocaleDateString()}</p>
+                    <p className="font-medium text-gray-900">{item.mood_detected}</p>
+                    <p className="text-sm opacity-75 text-gray-700">{new Date().toLocaleDateString()}</p>
                   </div>
                 ))}
               </div>
