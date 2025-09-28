@@ -1,6 +1,6 @@
-# Mindful AI
+# Multimodal Mindful AI
 
-A Next.js application that analyzes user emotions from text input and provides comprehensive personalized support including empathy, recommendations, motivational quotes, curated music, books, and places to visit based on your mood.
+A cutting-edge Next.js application that analyzes user emotions through multiple input modalities (text, voice, and images) and provides comprehensive personalized support including empathy, recommendations, motivational quotes, curated music, books, and places to visit based on your mood.
 
 ## Features
 
@@ -43,8 +43,8 @@ The app recognizes and provides tailored support for:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/afelipfo/Mindful_AI.git
-   cd Mindful_AI
+   git clone https://github.com/afelipfo/multimodal-mindful-ai.git
+   cd multimodal-mindful-ai
    ```
 
 2. **Install dependencies**
@@ -87,7 +87,7 @@ The app recognizes and provides tailored support for:
 ## Project Structure
 
 ```
-mindful-ai/
+multimodal-mindful-ai/
 ├── app/
 │   ├── api/analyze-mood/route.ts    # Mood analysis API with RAG
 │   ├── globals.css                  # Global styles
@@ -296,8 +296,8 @@ We welcome contributions to improve Mindful AI. Please follow these guidelines:
 ### Development Setup
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/Mindful_AI.git
-cd Mindful_AI
+git clone https://github.com/yourusername/multimodal-mindful-ai.git
+cd multimodal-mindful-ai
 
 # Install dependencies
 npm install
