@@ -24,7 +24,7 @@ export class MultiModalAnalyzer {
   /**
    * Analyzes image data for facial emotions using face-api.js
    */
-  async analyzeImage(_imageBase64: string): Promise<ImageAnalysis> {
+  async analyzeImage(imageBase64: string): Promise<ImageAnalysis> {
     try {
       // This will be implemented with face-api.js on the client side
       // For now, return a mock analysis
@@ -132,7 +132,7 @@ export class MultiModalAnalyzer {
     return bytes.buffer;
   }
 
-  private async performVoiceAnalysis(_audioBuffer: ArrayBuffer): Promise<VoiceAnalysis> {
+  private async performVoiceAnalysis(audioBuffer: ArrayBuffer): Promise<VoiceAnalysis> {
     // Simplified voice analysis - in production, use Web Audio API
     // This would analyze pitch, tone, speaking rate, etc.
     

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { getEmotionalSupport } from '@/lib/mood-analyzer';
 import { MindfulResponse } from '@/lib/types';
+import VoiceRecorder from '@/components/VoiceRecorder';
+import ImageCapture from '@/components/ImageCapture';
 
 function getMoodBorder(mood: string) {
   const lower = mood.toLowerCase();
@@ -34,6 +36,10 @@ export default function Home() {
   const [result, setResult] = useState<MindfulResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<MindfulResponse[]>([]);
+  const [voiceData, setVoiceData] = useState<string | null>(null);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [analysisMode, setAnalysisMode] = useState<'text' | 'voice' | 'image' | 'multimodal'>('text');
+  const [showMultiModal, setShowMultiModal] = useState(false);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('moodHistory');
@@ -47,8 +53,9 @@ export default function Home() {
   }, [history]);
 
   const handleAnalyze = async () => {
-    if (!textInput.trim()) {
-      setError('Please enter some text to analyze your mood.');
+    // Allow analysis with voice or image even without text
+    if (!textInput.trim() && !voiceData && !imageData) {
+      setError('Please enter some text, record voice, or capture an image to analyze your mood.');
       return;
     }
 
@@ -62,9 +69,21 @@ export default function Home() {
     }, 300);
 
     try {
-      console.log('Calling API with text:', textInput);
+      // Determine analysis mode based on available data
+      let currentMode = analysisMode;
+      if (voiceData && imageData) currentMode = 'multimodal';
+      else if (voiceData) currentMode = 'voice';
+      else if (imageData) currentMode = 'image';
+      else currentMode = 'text';
+
+      console.log('Calling API with:', { 
+        textInput: textInput || '[No text provided]', 
+        currentMode, 
+        hasVoice: !!voiceData, 
+        hasImage: !!imageData 
+      });
       
-      const response = await getEmotionalSupport(textInput);
+      const response = await getEmotionalSupport(textInput || '', voiceData, imageData, currentMode);
       
       console.log('API response received:', response);
       
@@ -92,6 +111,19 @@ export default function Home() {
     setResult(null);
     setError(null);
     setProgress(0);
+    setVoiceData(null);
+    setImageData(null);
+    setAnalysisMode('text');
+  };
+
+  const handleVoiceRecording = (audioBase64: string) => {
+    setVoiceData(audioBase64);
+    setAnalysisMode(imageData ? 'multimodal' : 'voice');
+  };
+
+  const handleImageCapture = (imageBase64: string) => {
+    setImageData(imageBase64);
+    setAnalysisMode(voiceData ? 'multimodal' : 'image');
   };
 
   const handleShare = async () => {
@@ -132,10 +164,49 @@ export default function Home() {
             />
             <p id="input-help" className="text-sm text-gray-500 mb-4">Press Enter to analyze</p>
 
+            {/* Multi-Modal Toggle */}
+            <div className="mb-4">
+              <button
+                onClick={() => setShowMultiModal(!showMultiModal)}
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <span>{showMultiModal ? '🔽' : '▶️'}</span>
+                Advanced: Voice & Image Analysis
+              </button>
+            </div>
+
+            {/* Multi-Modal Components */}
+            {showMultiModal && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Multi-Modal Input</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-600 mb-2">Voice Recording</h4>
+                    <VoiceRecorder onRecordingComplete={handleVoiceRecording} />
+                    {voiceData && (
+                      <p className="text-xs text-green-600 mt-1">✓ Voice recorded</p>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-600 mb-2">Image Capture</h4>
+                    <ImageCapture onImageCapture={handleImageCapture} />
+                    {imageData && (
+                      <p className="text-xs text-green-600 mt-1">✓ Image captured</p>
+                    )}
+                  </div>
+                </div>
+                {(voiceData || imageData) && (
+                  <div className="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-700">
+                    Analysis Mode: {analysisMode === 'multimodal' ? 'Multi-Modal' : analysisMode === 'voice' ? 'Voice' : 'Image'}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-2">
               <button
                 onClick={handleAnalyze}
-                disabled={loading || !textInput.trim()}
+                disabled={loading || (!textInput.trim() && !voiceData && !imageData)}
                 className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-6 rounded-lg hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                 aria-label="Analyze mood"
               >
@@ -145,7 +216,7 @@ export default function Home() {
                     Analyzing...
                   </div>
                 ) : (
-                  'Analyze my mood'
+                  `Analyze ${analysisMode === 'multimodal' ? 'Multi-Modal' : analysisMode === 'voice' ? 'Voice' : analysisMode === 'image' ? 'Image' : 'Text'} Mood`
                 )}
               </button>
               <button
