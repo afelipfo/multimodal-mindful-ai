@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
     const body: MoodInput = await request.json();
     const { text_input, voice_data, image_data, analysis_mode = 'text' } = body;
 
-    // Validate input
-    if (!text_input || text_input.trim().length === 0) {
-      return NextResponse.json({ error: 'Text input is required' }, { status: 400 });
+    // Validate input - require at least one input type
+    if ((!text_input || text_input.trim().length === 0) && !voice_data && !image_data) {
+      return NextResponse.json({ error: 'At least one input type (text, voice, or image) is required' }, { status: 400 });
     }
 
     // Check OpenAI API key
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Initialize multi-modal analyzer
     const multiModalAnalyzer = new MultiModalAnalyzer();
-    let enhancedTextInput = text_input;
+    let enhancedTextInput = text_input || '[No text provided - analyzing from voice/image data]';
 
     // Perform multi-modal analysis if data is available
     let voiceAnalysis, imageAnalysis;
