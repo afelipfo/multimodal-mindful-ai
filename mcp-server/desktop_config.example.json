@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mindful-ai": {
+      "command": "node",
+      "args": [
+        "/ABSOLUTE/PATH/TO/multimodal-mindful-ai/mcp-server/dist/index.js"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "your_openai_api_key_here"
+      }
+    }
+  }
+}

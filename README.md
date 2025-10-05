@@ -26,6 +26,7 @@ A Next.js application that analyzes user emotions through multiple input modalit
 - **AI**: OpenAI GPT-4o-mini with LangChain
 - **RAG System**: Curated databases of books and places categorized by mood
 - **Multi-Modal**: Voice recording via Web Audio API, image capture via MediaDevices API
+- **MCP Server**: Model Context Protocol server for AI assistant integration
 
 ## Getting Started
 
@@ -94,6 +95,14 @@ multimodal-mindful-ai/
 │   ├── places.ts                    # Places database (30+ locations)
 │   ├── rag-system.ts                # RAG system implementation
 │   └── types.ts                     # TypeScript types
+├── mcp-server/                      # MCP Server implementation
+│   ├── src/
+│   │   ├── data/                    # Shared data sources
+│   │   ├── index.ts                 # Main server implementation
+│   │   └── types.ts                 # Type definitions
+│   ├── dist/                        # Compiled server (after build)
+│   ├── package.json
+│   └── README.md                    # MCP server documentation
 └── README.md                        # This file
 ```
 
@@ -180,6 +189,58 @@ Analyzes user input and returns comprehensive mood analysis.
   }
 }
 ```
+
+## MCP Server Integration
+
+This project includes a custom **Model Context Protocol (MCP)** server that exposes mood analysis capabilities to AI assistants like Claude.
+
+### Features
+
+**Tools:**
+- `get_music_recommendation` - Get music for specific moods
+- `get_book_recommendation` - Get book suggestions based on mood
+- `get_place_recommendation` - Get place recommendations
+- `detect_mood` - Detect mood from text input
+- `add_to_history` - Track mood analysis history
+
+**Resources:**
+- `mood://categories` - List supported mood categories
+- `mood://history` - View recent analyses
+- `music://database` - Browse complete music database
+- `books://database` - Browse complete books database
+- `places://database` - Browse complete places database
+
+### Setup MCP Server
+
+```bash
+cd mcp-server
+npm install
+npm run build
+```
+
+### Configure with Claude Desktop
+
+Add to your Claude Desktop config file:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "mindful-ai": {
+      "command": "node",
+      "args": ["/absolute/path/to/multimodal-mindful-ai/mcp-server/dist/index.js"],
+      "env": {
+        "OPENAI_API_KEY": "your_openai_api_key_here"
+      }
+    }
+  }
+}
+```
+
+See `mcp-server/README.md` for detailed documentation.
 
 ## License
 
