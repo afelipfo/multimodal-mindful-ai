@@ -16,10 +16,7 @@
     "openai": "^5.22.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "zod": "^3.25.76",
-    "@tensorflow/tfjs": "^4.15.0",
-    "@tensorflow-models/face-landmarks-detection": "^1.0.5",
-    "face-api.js": "^0.22.2"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
