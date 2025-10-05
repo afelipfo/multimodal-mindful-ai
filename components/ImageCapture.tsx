@@ -43,6 +43,7 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
   const startCamera = async () => {
     setIsLoading(true);
     setError(null);
+    setUseCamera(true); // Show video element first
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -55,17 +56,35 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
 
       streamRef.current = stream;
 
+      // Wait for next tick to ensure video element is rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+
+        // Add event listener for when video is ready
+        videoRef.current.onloadedmetadata = async () => {
+          try {
+            if (videoRef.current) {
+              await videoRef.current.play();
+              setIsLoading(false);
+            }
+          } catch (playError) {
+            console.error('Error playing video:', playError);
+            setError('Failed to start video playback.');
+            setIsLoading(false);
+          }
+        };
+      } else {
+        setError('Video element not ready.');
+        setIsLoading(false);
       }
 
-      setUseCamera(true);
-      setIsLoading(false);
     } catch (error) {
       console.error('Error accessing camera:', error);
       setError('Failed to access camera. Please check permissions.');
       setHasCamera(false);
+      setUseCamera(false);
       setIsLoading(false);
     }
   };
@@ -188,19 +207,30 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
           </div>
         )}
 
-        <div className="relative">
+        <div className="relative bg-gray-900 rounded-lg">
           <video
             ref={videoRef}
             className="w-80 h-60 object-cover rounded-lg border-2 border-blue-400 shadow-lg"
             autoPlay
             muted
             playsInline
+            style={{ backgroundColor: '#1a1a1a' }}
           />
           <canvas ref={canvasRef} className="hidden" />
-          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <span>LIVE</span>
-          </div>
+
+          {isLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 rounded-lg">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-white text-sm">Starting camera...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span>LIVE</span>
+            </div>
+          )}
         </div>
 
         <div className="flex space-x-2">
