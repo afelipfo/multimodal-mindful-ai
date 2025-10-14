@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { getEmotionalSupport } from '@/lib/mood-analyzer';
-import { MindfulResponse } from '@/lib/types';
+import { MindfulResponse, HistoryEntry } from '@/lib/types';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import ImageCapture from '@/components/ImageCapture';
+import ConfidenceDisplay from '@/components/ConfidenceDisplay';
+import EmotionalPatternTracker from '@/components/EmotionalPatternTracker';
 
 function getMoodBorder(mood: string) {
   const lower = mood.toLowerCase();
@@ -35,7 +37,7 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<MindfulResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<MindfulResponse[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [voiceData, setVoiceData] = useState<string | null>(null);
   const [imageData, setImageData] = useState<string | null>(null);
   const [analysisMode, setAnalysisMode] = useState<'text' | 'voice' | 'image' | 'multimodal'>('text');
@@ -86,9 +88,16 @@ export default function Home() {
       const response = await getEmotionalSupport(textInput || '', voiceData, imageData, currentMode);
       
       console.log('API response received:', response);
-      
+
       setResult(response);
-      setHistory(prev => [response, ...prev.slice(0, 4)]); // Keep last 5
+
+      // Add to history with timestamp and id
+      const historyEntry: HistoryEntry = {
+        ...response,
+        timestamp: Date.now(),
+        id: `entry-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      };
+      setHistory(prev => [historyEntry, ...prev.slice(0, 9)]); // Keep last 10
       setProgress(100);
     } catch (error) {
       console.error('Frontend error:', error);
@@ -99,7 +108,7 @@ export default function Home() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleAnalyze();
@@ -121,7 +130,9 @@ export default function Home() {
     setAnalysisMode(imageData ? 'multimodal' : 'voice');
   };
 
-  const handleImageCapture = (imageBase64: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleImageCapture = (imageBase64: string, analysis?: any) => {
+    console.log('Image captured with analysis:', analysis);
     setImageData(imageBase64);
     setAnalysisMode(voiceData ? 'multimodal' : 'image');
   };
@@ -159,7 +170,7 @@ export default function Home() {
               placeholder="Share your thoughts and feelings..."
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               aria-describedby="input-help"
             />
             <p id="input-help" className="text-sm text-gray-500 mb-4">Press Enter to analyze</p>
@@ -249,21 +260,25 @@ export default function Home() {
           )}
 
           {result && (
-            <div className={`bg-white rounded-xl shadow-lg p-6 border-l-4 ${getMoodBorder(result.mood_detected)} animate-fade-in transition-all duration-300 relative`}>
-              {isPositiveMood && (
-                <div className="absolute top-4 right-4 text-2xl animate-bounce">🎉</div>
-              )}
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Your Personalized Support</h2>
-                <button
-                  onClick={handleShare}
-                  className="px-3 py-1 rounded text-sm bg-gray-200 text-gray-700 hover:bg-opacity-80 transition"
-                  aria-label="Share results"
-                >
-                  Share
-                </button>
-              </div>
-              <div className="space-y-4">
+            <>
+              {/* Confidence Display */}
+              <ConfidenceDisplay result={result} />
+
+              <div className={`bg-white rounded-xl shadow-lg p-6 border-l-4 ${getMoodBorder(result.mood_detected)} animate-fade-in transition-all duration-300 relative`}>
+                {isPositiveMood && (
+                  <div className="absolute top-4 right-4 text-2xl animate-bounce">🎉</div>
+                )}
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">Your Personalized Support</h2>
+                  <button
+                    onClick={handleShare}
+                    className="px-3 py-1 rounded text-sm bg-gray-200 text-gray-700 hover:bg-opacity-80 transition"
+                    aria-label="Share results"
+                  >
+                    Share
+                  </button>
+                </div>
+                <div className="space-y-4">
                 <div className="flex items-start">
                   <span className="text-2xl mr-3" role="img" aria-label="Mood">🎭</span>
                   <div>
@@ -389,6 +404,14 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+              </div>
+            </>
+          )}
+
+          {/* Emotional Pattern Tracker */}
+          {history.length > 0 && (
+            <div className="mt-8">
+              <EmotionalPatternTracker history={history} />
             </div>
           )}
 
@@ -396,10 +419,16 @@ export default function Home() {
             <div className="bg-white rounded-xl shadow-lg p-6 mt-8">
               <h3 className="text-xl font-bold mb-4 text-gray-800">Recent Analyses</h3>
               <div className="space-y-2">
-                {history.slice(0, 3).map((item, index) => (
-                  <div key={index} className={`p-3 rounded border ${getMoodBg(item.mood_detected)} ${getMoodBorder(item.mood_detected)} cursor-pointer hover:opacity-80 transition`} onClick={() => setResult(item)}>
+                {history.slice(0, 3).map((item) => (
+                  <div
+                    key={item.id}
+                    className={`p-3 rounded border ${getMoodBg(item.mood_detected)} ${getMoodBorder(item.mood_detected)} cursor-pointer hover:opacity-80 transition`}
+                    onClick={() => setResult(item)}
+                  >
                     <p className="font-medium text-gray-900">{item.mood_detected}</p>
-                    <p className="text-sm opacity-75 text-gray-700">{new Date().toLocaleDateString()}</p>
+                    <p className="text-sm opacity-75 text-gray-700">
+                      {new Date(item.timestamp).toLocaleDateString()}
+                    </p>
                   </div>
                 ))}
               </div>

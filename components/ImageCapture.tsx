@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { getFaceEmotionDetector } from '@/lib/face-emotion-detector';
+import { ImageAnalysis } from '@/lib/types';
 
 interface ImageCaptureProps {
-  onImageCapture: (imageBase64: string) => void;
+  onImageCapture: (imageBase64: string, analysis?: ImageAnalysis) => void;
   isDisabled?: boolean;
 }
 
@@ -13,11 +15,14 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
   const [useCamera, setUseCamera] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [detectedEmotion, setDetectedEmotion] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef(getFaceEmotionDetector());
 
   useEffect(() => {
     checkCameraAvailability();
@@ -97,7 +102,7 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
     setUseCamera(false);
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) {
       setError('Camera not ready. Please try again.');
       return;
@@ -113,6 +118,8 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
     }
 
     try {
+      setAnalyzing(true);
+
       // Set canvas dimensions to match video
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -122,8 +129,19 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
 
       // Convert to base64 with high quality
       const imageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+
+      // Analyze facial emotions
+      let analysis: ImageAnalysis | undefined;
+      try {
+        await detectorRef.current.initialize();
+        analysis = await detectorRef.current.analyzeImage(canvas);
+        setDetectedEmotion(analysis.dominantEmotion);
+      } catch (analysisError) {
+        console.warn('Facial analysis failed, continuing without it:', analysisError);
+      }
+
       setCapturedImage(imageBase64);
-      onImageCapture(imageBase64);
+      onImageCapture(imageBase64, analysis);
       setError(null);
 
       // Stop camera after capture
@@ -131,10 +149,12 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
     } catch (error) {
       console.error('Error capturing photo:', error);
       setError('Failed to capture image. Please try again.');
+    } finally {
+      setAnalyzing(false);
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -153,19 +173,41 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
+      setAnalyzing(true);
       const imageBase64 = e.target?.result as string;
+
+      // Analyze facial emotions from uploaded image
+      let analysis: ImageAnalysis | undefined;
+      try {
+        const img = new Image();
+        img.src = imageBase64;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
+        await detectorRef.current.initialize();
+        analysis = await detectorRef.current.analyzeImage(img);
+        setDetectedEmotion(analysis.dominantEmotion);
+      } catch (analysisError) {
+        console.warn('Facial analysis failed, continuing without it:', analysisError);
+      }
+
       setCapturedImage(imageBase64);
-      onImageCapture(imageBase64);
+      onImageCapture(imageBase64, analysis);
+      setAnalyzing(false);
     };
     reader.onerror = () => {
       setError('Failed to read image file. Please try again.');
+      setAnalyzing(false);
     };
     reader.readAsDataURL(file);
   };
 
   const resetCapture = () => {
     setCapturedImage(null);
+    setDetectedEmotion(null);
     setError(null);
     stopCamera();
   };
@@ -187,6 +229,11 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
           >
             ×
           </button>
+          {detectedEmotion && (
+            <div className="absolute bottom-2 left-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+              😊 Detected: {detectedEmotion}
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,16 +283,26 @@ export default function ImageCapture({ onImageCapture, isDisabled }: ImageCaptur
         <div className="flex space-x-2">
           <button
             onClick={capturePhoto}
-            disabled={isDisabled}
+            disabled={isDisabled || analyzing}
             className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 font-medium shadow-md flex items-center space-x-2"
             aria-label="Capture photo"
           >
-            <span>📸</span>
-            <span>Capture</span>
+            {analyzing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Analyzing...</span>
+              </>
+            ) : (
+              <>
+                <span>📸</span>
+                <span>Capture</span>
+              </>
+            )}
           </button>
           <button
             onClick={stopCamera}
-            className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium shadow-md"
+            disabled={analyzing}
+            className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition disabled:opacity-50 font-medium shadow-md"
             aria-label="Cancel"
           >
             Cancel

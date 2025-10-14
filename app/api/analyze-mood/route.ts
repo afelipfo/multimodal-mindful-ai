@@ -125,6 +125,16 @@ Examples:
 
     // Use multi-modal analysis to enhance mood detection for RAG
     let finalMood = response.mood_detected;
+    let confidence = 0.7;
+    let sources = ['text'];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let analysisDetails: any = {
+      text: {
+        mood: response.mood_detected,
+        confidence: 0.7,
+      },
+    };
+
     if (voiceAnalysis || imageAnalysis) {
       const combinedAnalysis = multiModalAnalyzer.combineAnalyses(
         response.mood_detected,
@@ -132,17 +142,33 @@ Examples:
         imageAnalysis
       );
       finalMood = combinedAnalysis.combinedMood;
+      confidence = combinedAnalysis.confidence;
+      sources = combinedAnalysis.sources;
+      analysisDetails = combinedAnalysis.details;
+
+      if (voiceAnalysis) {
+        analysisDetails.voice = voiceAnalysis;
+      }
+      if (imageAnalysis) {
+        analysisDetails.image = imageAnalysis;
+      }
     }
 
     // Initialize RAG system and get book and place recommendations
     const ragSystem = new MoodBasedRAG();
     const ragRecommendations = await ragSystem.getRecommendations(enhancedTextInput, finalMood);
-    
-    // Add RAG recommendations to response
+
+    // Add RAG recommendations and analysis metadata to response
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (response as any).book_recommendation = ragRecommendations.book;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (response as any).place_recommendation = ragRecommendations.place;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (response as any).confidence = confidence;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (response as any).sources = sources;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (response as any).analysis_details = analysisDetails;
 
     return NextResponse.json(response);
   } catch (error) {

@@ -32,6 +32,14 @@ export interface MindfulResponse {
   music_recommendation: MusicRecommendation;
   book_recommendation: BookRecommendation;
   place_recommendation: PlaceRecommendation;
+  confidence?: number;
+  sources?: string[];
+  analysis_details?: {
+    text?: { mood: string; confidence: number };
+    voice?: VoiceAnalysis;
+    image?: ImageAnalysis;
+  };
+  emotional_pattern?: EmotionalPattern;
 }
 
 export interface VoiceAnalysis {
@@ -61,4 +69,21 @@ export interface MoodInput {
   voice_data?: string; // Base64 encoded audio
   image_data?: string; // Base64 encoded image
   analysis_mode?: 'text' | 'voice' | 'image' | 'multimodal';
+}
+
+export interface EmotionalPattern {
+  trend: 'improving' | 'declining' | 'stable' | 'fluctuating';
+  mostCommonMood: string;
+  moodFrequency: Record<string, number>;
+  averageConfidence: number;
+  recentMoods: Array<{
+    mood: string;
+    timestamp: number;
+    confidence: number;
+  }>;
+}
+
+export interface HistoryEntry extends MindfulResponse {
+  timestamp: number;
+  id: string;
 }
